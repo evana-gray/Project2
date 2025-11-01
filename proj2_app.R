@@ -5,9 +5,9 @@ library(shiny)
 library(shinyalert)
 
 
-############################
-# Read in 2009 - 2018 data 
-############################
+############################################
+# Read in 2009 - 2018 NFL play by play data 
+############################################
 
 # first, read NFL play by play csv (have to manage file size before actually reading in)
 # then, use nflreadr::load_players() and load_teams() to gather all player and info (position, date of birth, etc) to use for left join
@@ -44,10 +44,40 @@ players <- load_players()
 teams <- load_teams()
 
 #join data on gsis_id - an established key specific to each NFL player 
-
 nfl_pbp <- left_join(nfl_pbp, players, by = "gsis_id")
 nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 
-#Add player age at at gametime and year(game_date)
-nfl_pbp$age <- as.integer((as.Date(nfl_pbp$game_date) - as.Date(nfl_pbp$birth_date))/365)
-nfl_pbp$game_year <- year(as.Date(nfl_pbp$game_date))
+#Add: 
+# player age at at gametime
+# year(game_date)
+# player years of experience
+nfl_pbp <- nfl_pbp |> mutate(
+  age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
+  game_year = year(as.Date(game_date)),
+  years_experience = game_year - rookie_season
+)
+
+############################################
+# Static Tables and Plots
+############################################
+
+
+#contingency table 1 - what positional groups commit the most penalties
+nfl_pbp |>
+  drop_na(position_group) |>
+  group_by(position_group) |>
+  summarize(count = n()) |>
+  arrange(desc(count))
+
+#contingency table 2 - penalties committed by years of experience
+nfl_pbp |>
+  drop_na(years_experience) |>
+  group_by(years_experience) |>
+  summarize(count = n()) |>
+  arrange(years_experience)
+
+
+
+
+
+
