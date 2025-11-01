@@ -21,18 +21,18 @@ nfl_pbp <- nfl_pbp |>
   filter(penalty_yards > 0 & play_type %in% c('run','pass') & length(penalty_player_id) > 1) |>
   select(play_id, game_id, game_date, home_team, play_type, game_half, qtr,
          penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
-  rename('gsis_id' = penalty_player_id,
-         'team_abbr' = penalty_team) |>
-  mutate(penalty_type = str_replace_na(penalty_type,'Other'))
+  rename("gsis_id" = penalty_player_id,
+         "team_abbr" = penalty_team) |>
+  mutate(penalty_type = str_replace_na(penalty_type,"Other"))
 
 #vectorized/anonymous function w/ switch() to rename team_abbr of teams that have relocated
  nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr, 
                              FUN = function(x){
                                switch(x,
-                                       'JAC' = 'JAX',
-                                       'STL' = 'LA',
-                                       'SD' = 'LAC',
-                                       'OAK' = 'LV',
+                                       "JAC" = "JAX",
+                                       "STL" = "LA",
+                                       "SD" = "LAC",
+                                       "OAK" = "LV",
                                         x)}
                              )
  ##Check rename
@@ -62,12 +62,13 @@ nfl_pbp <- nfl_pbp |> mutate(
 ############################################
 
 
-#contingency table 1 - what positional groups commit the most penalties
+#contingency table 1 - what positional groups commit the most penalties, what about penalty yards?
 nfl_pbp |>
   drop_na(position_group) |>
   group_by(position_group) |>
   summarize(count = n()) |>
   arrange(desc(count))
+
 
 #contingency table 2 - penalties committed by years of experience
 nfl_pbp |>
@@ -76,8 +77,21 @@ nfl_pbp |>
   summarize(count = n()) |>
   arrange(years_experience)
 
+#contingency table 3 
+nfl_pbp |>
+  drop_na(game_year, team_conf) |>
+  group_by(game_year, team_conf) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = team_conf, values_from = count) 
 
 
+#Measures of Spread for age by penalty type
+fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
 
+five_summary_type <- nfl_pbp |> 
+                          group_by(penalty_type)|> 
+                          summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE)) |>
+                          arrange(years_experience_mean)
 
+print(five_summary_type, n = 40)
 
