@@ -20,6 +20,7 @@ nfl_pbp <- nfl_pbp |>
   rename("gsis_id" = penalty_player_id)
   
 players <- load_players()
+teams <- load_teams()
 
 #join data on gsis_id - an established key specific to each NFL player 
 
