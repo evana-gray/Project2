@@ -10,13 +10,13 @@ library(shinyalert)
 ############################
 
 # first, read NFL play by play csv (have to manage file size before actually reading in)
-# then, use nflreadr::load_players() to gather all player info (position, date of birth, etc) to use for left join
+# then, use nflreadr::load_players() and load_teams() to gather all player and info (position, date of birth, etc) to use for left join
 # https://nflreadr.nflverse.com/reference/load_players.html
 
+# original file is listed in gitignore so it won't overwhelm github pushes
 nfl_pbp <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
 
 # initial subset and clean
-# original file is listed in gitignore
 nfl_pbp <- nfl_pbp |> 
   filter(penalty_yards > 0 & play_type %in% c('run','pass') & length(penalty_player_id) > 1) |>
   select(play_id, game_id, game_date, home_team, play_type, game_half, qtr,
@@ -25,7 +25,7 @@ nfl_pbp <- nfl_pbp |>
          'team_abbr' = penalty_team) |>
   mutate(penalty_type = str_replace_na(penalty_type,'Other'))
 
-#vectorized/anonymous function to rename team_abbr of teams that have relocated
+#vectorized/anonymous function w/ switch() to rename team_abbr of teams that have relocated
  nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr, 
                              FUN = function(x){
                                switch(x,
@@ -39,6 +39,7 @@ nfl_pbp <- nfl_pbp |>
  # unique(nfl_pbp$team_abbr)
  # unique(nfl_pbp$team_division)
  
+ #load player and team specific information
 players <- load_players()
 teams <- load_teams()
 
@@ -48,5 +49,5 @@ nfl_pbp <- left_join(nfl_pbp, players, by = "gsis_id")
 nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 
 #Add player age at at gametime and year(game_date)
-nfl_pbp$datediff <- as.integer((as.Date(nfl_pbp$game_date) - as.Date(nfl_pbp$birth_date))/365)
-nfl_pbp$year <- year(as.Date(nfl_pbp$game_date))
+nfl_pbp$age <- as.integer((as.Date(nfl_pbp$game_date) - as.Date(nfl_pbp$birth_date))/365)
+nfl_pbp$game_year <- year(as.Date(nfl_pbp$game_date))
