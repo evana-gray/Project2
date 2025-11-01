@@ -16,8 +16,11 @@ nfl_pbp <- read_csv("NFL Play by Play 2009-2018 (v5).csv")
 # original file is listed in gitignore
 nfl_pbp <- nfl_pbp |> 
   filter(penalty_yards > 0) |>
-  select(play_id, game_id,penalty_team, penalty_player_id, penalty_yards, penalty_type)
+  select(play_id, game_id,penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
+  rename("gsis_id" = penalty_player_id)
   
 players <- load_players()
 
 #join data on gsis_id - an established key specific to each NFL player 
+
+joineddf <- left_join(nfl_pbp, players, by = "gsis_id")
