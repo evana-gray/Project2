@@ -5,6 +5,7 @@ library(RColorBrewer)
 library(tidyverse)
 library(shiny)
 library(shinyalert)
+library(scales)
 
 
 ############################################
@@ -21,7 +22,7 @@ nfl_pbp_full <- read_csv("NFL Play by Play 2009-2018 (v5).csv")
 
 # initial subset and clean
 nfl_pbp <- nfl_pbp |> 
-  filter(penalty_yards > 0 & play_type %in% c('run','pass') & length(penalty_player_id) >= 2) |>
+  filter(penalty_yards > 0 & play_type %in% c('run','pass','no_play') & length(penalty_player_id) >= 2) |>
   select(play_id, game_id, defteam, game_date, home_team, play_type, game_half, qtr,
         penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
   rename("gsis_id" = penalty_player_id,
@@ -161,10 +162,27 @@ gdot1 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(pe
                   geom_point() 
 gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Experience (Years)", y = "Penalty") +
   theme_minimal()
-  
+
+#geom line - facet by position
+#show penalties by year 
+
+gline_data <- nfl_pbp |>
+  drop_na(position_group, game_year) |>
+  group_by(position_group, game_year) |>
+  summarize(count = n()) |>
+  arrange(position_group, game_year)
+
+gl1 <- ggplot(gline_data, aes(x = game_year, y = count, color = position_group))
+gl1 + geom_line(size = 2.5) +
+  scale_color_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+  labs(title = "Penalties Taken by Year and Position", x = "Year", y = "Penalties") +
+  facet_wrap(~ position_group, nrow = 2) +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 
 #bar graph - most common penalties by position group
+#scales:: label_wrap cleans up x axis values
 
 gbar2_data <- nfl_pbp |>
   drop_na(position_group, penalty_type) |>
@@ -174,9 +192,17 @@ gbar2_data <- nfl_pbp |>
   slice(1:3)
 
 
-gbar2 <- ggplot(gbar2_data, aes(x = penalty_type,count, y = count))
-gbar2 + geom_col() +
+gbar2 <- ggplot(gbar2_data, aes(x = penalty_type, y = count, fill = position_group))
+gbar2 + geom_bar(stat = "identity") +
   scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+  scale_x_discrete(labels = label_wrap(10)) +
+  labs(title = "Top 3 Most Common Penalties by Position", x = "Penalty", y = "Penalties") +
+  geom_text(aes(label=count), vjust=-0.2) +
+  facet_wrap(~ position_group, nrow = 3, scales = "free_x") +
+  ylim(0,5000) +
   theme_minimal() +
-  facet_wrap(~ position_group, nrow = 3, scales = "free_x")
+  theme(legend.position = "none")
+
+
+
 
