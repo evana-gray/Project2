@@ -67,23 +67,23 @@ nfl_pbp_full <- nfl_pbp_full |> mutate(
 
 #Create Penalties Per Game Measure
 #full dataset needed
-
-getPenaltiesPerGame <- function(){
-  
-  count_unique_games_all <- length(unique(nfl_pbp_full$game_id))
-  penalty_count <- length(unique(nfl_pbp$penaltyid))
-  
-  penalties_per_game <- penalty_count/count_unique_games_all
-  
-  return(penalties_per_game)
-  
-}
-
-
-penalties_per_game_tbl <- nfl_pbp_full |>
-  group_by(game_year, gsis_id) |>
-  summarize(games = length(unique(nfl_pbp_full$game_id)))
-
+# 
+# getPenaltiesPerGame <- function(){
+#   
+#   count_unique_games_all <- length(unique(nfl_pbp_full$game_id))
+#   penalty_count <- length(unique(nfl_pbp$penaltyid))
+#   
+#   penalties_per_game <- penalty_count/count_unique_games_all
+#   
+#   return(penalties_per_game)
+#   
+# }
+# 
+# 
+# penalties_per_game_tbl <- nfl_pbp_full |>
+#   group_by(game_year, gsis_id) |>
+#   summarize(games = length(unique(nfl_pbp_full$game_id)))
+# 
 
 
 
@@ -159,8 +159,6 @@ gbar1 + geom_bar(stat = "count", position = "dodge") +
 
 
 #positional box and whisker - experience distribution by 
-gbox1 <- ggplot(nfl_pbp, aes(x = position_group, fill = team_conf))
-gbar1 + geom_bar(stat = "count", position = "dodge") +
-  labs(title = "Penalties Taken by Positional Group and Conference", x = "Positional Group", y = "Penalties Taken") +
-  scale_fill_manual(values = c("#C8102E","#003A70")) +
+gbox1 <- ggplot(nfl_pbp, aes(x = position_group, y = years_experience))
+gbox1 + geom_boxplot() +
   theme_minimal()
