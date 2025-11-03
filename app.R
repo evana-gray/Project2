@@ -78,6 +78,15 @@ ui <- fluidPage(
         choiceValues = list("both", "AFC", "NFC"),
         selected = "both"
         ),
+      
+      radioButtons(
+        "side",
+        "Side of Ball",
+        choiceNames = list("All","Offense","Defense","Special Teams"),
+        choiceValues = list("all","Offense","Defense","Special Teams"),
+        selected = "all"
+      ),
+      
       sliderInput(
         "year",
         "Select Year Range",
@@ -91,9 +100,15 @@ ui <- fluidPage(
       ),
     
       mainPanel(
-        tableOutput("table1"),
         plotOutput("plot1"),
-        plotOutput("plot2")
+        plotOutput("plot2"),
+        plotOutput("plot3"),
+        plotOutput("plot4"),
+        plotOutput("plot5"),
+        plotOutput("plot6"),
+        plotOutput("plot7")
+        
+        # tableOutput("table1")
         )
     )
 )
@@ -112,6 +127,12 @@ server <- function(input,output,session){
         conf_sub <- input$conf
       }      
       
+      if(input$side == "all"){
+        side_sub <- c('Offense','Defense','Special Teams')
+      } else {
+        side_sub <- input$side
+      }    
+      
       
       
 ######################################
@@ -123,12 +144,16 @@ server <- function(input,output,session){
       age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
       game_year = year(as.Date(game_date)),
       years_experience = game_year - rookie_season,
-      side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
+      side_of_ball = if_else(position_group %in% c("OL","QB","RB","TE","WR"),"Offense",
+                             if_else(position_group %in% c("DB","DL","LB"),"Defense","Special Teams")),
       penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
     ) |>
     filter(
-      position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR") &
-      between(game_year, input$year[1], input$year[2]) & team_conf %in% conf_sub # compare game year to first and second elements of input$year range
+      position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR","SPEC") &
+        # compare game year to first and second elements of input$year range
+      between(game_year, input$year[1], input$year[2]) & 
+      team_conf %in% conf_sub &
+      side_of_ball %in% side_sub
       )
   
   pen_year_conf <- nfl_pbp |>
@@ -149,7 +174,14 @@ server <- function(input,output,session){
     slice(1:3)
   
   
+  fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
   
+  five_summary_type <- nfl_pbp |> 
+    group_by(penalty_type)|> 
+    summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
+              count = n() #include count
+    ) |>
+    arrange(years_experience_mean)
   
   
   
@@ -160,20 +192,6 @@ server <- function(input,output,session){
 #Plots
 ######################################
   
-  output$table1 <- renderTable({
-    
-    fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
-    
-    five_summary_type <- nfl_pbp |> 
-      group_by(penalty_type)|> 
-      summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
-                count = n() #include count
-      ) |>
-      arrange(years_experience_mean)
-    
-    print(five_summary_type, n = 50)
-    
-  })
   
   output$plot1 <- renderPlot({
     
@@ -198,8 +216,82 @@ server <- function(input,output,session){
       theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
   })
   
-  
+  output$plot3 <- renderPlot({
+    
+    #positional box and whisker - experience distribution by positional group
+    #Fill colors taken from teams dataset - manually ordered to be distinct 
+    gbox1 <- ggplot(nfl_pbp, aes(x = position_group,fill = position_group, y = years_experience))
+    gbox1 + geom_violin() + 
+      scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+      labs(title = "Distribution of Experience (Years) Among Penalized Players by Position Group", x = "Position Group", y = "Years Experience") +
+      theme_minimal()+
+      theme(legend.position = "none")
+
   })
+  
+  output$plot4 <- renderPlot({
+    #Cleveland dot plot - total penalty count by penalty type
+    gdot1 <- ggplot(five_summary_type, aes(x = count, y = reorder(penalty_type, count))) + 
+      geom_point() 
+    gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Penalty Count", y = "Penalty") +
+      theme_minimal()
+  })
+  
+  output$plot5 <- renderPlot({
+    #Cleveland dot plot - descending avg years of experience by penalty type
+    gdot2 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(penalty_type, years_experience_mean))) + 
+      geom_point() 
+    gdot2 + labs(title = "Avg Years of Experience by Penalty", x = "Experience (Years)", y = "Penalty") +
+      theme_minimal()
+  })
+  
+  output$plot6 <- renderPlot({
+    gl1 <- ggplot(gline_data, aes(x = game_year, y = count, color = position_group))
+    gl1 + geom_line(size = 2.5) +
+      scale_color_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+      labs(title = "Penalties Taken by Year and Position", x = "Year", y = "Penalties") +
+      facet_wrap(~ position_group, nrow = 2) +
+      theme_minimal() +
+      theme(legend.position = "none")
+  })
+  
+  output$plot7 <- renderPlot({
+    gbar2 <- ggplot(gbar2_data, aes(x = penalty_type, y = count, fill = position_group))
+    gbar2 + geom_bar(stat = "identity") +
+      scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+      scale_x_discrete(labels = label_wrap(10)) +
+      labs(title = "Top 3 Most Common Penalties by Position", x = "Penalty", y = "Penalties") +
+      geom_text(aes(label=count), vjust=-0.2) +
+      facet_wrap(~ position_group, nrow = 3, scales = "free_x") +
+      ylim(0,5000) +
+      theme_minimal() +
+      theme(legend.position = "none",
+            axis.text.y = element_blank())
+  })
+  
+
+  
+######################################
+#Numeric Analysis Tables
+######################################
+  
+  # output$table1 <- renderTable({
+  #   
+  #   fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
+  #   
+  #   five_summary_type <- nfl_pbp |> 
+  #     group_by(penalty_type)|> 
+  #     summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
+  #               count = n() #include count
+  #     ) |>
+  #     arrange(years_experience_mean)
+  #   
+  #   print(five_summary_type, n = 50)
+  # })
+  # 
+  
+})
+  
 }
 
 # Run the application 

@@ -61,10 +61,11 @@ nfl_pbp <- nfl_pbp |>
     age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
     game_year = year(as.Date(game_date)),
     years_experience = game_year - rookie_season,
-    side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
+    side_of_ball = if_else(position_group %in% c("OL","QB","RB","TE","WR"),"Offense",
+                           if_else(position_group %in% c("DB","DL","LB"),"Defense","Special Teams")),
     penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
   ) |>
-  filter(position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR"))
+  filter(position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR","SPEC"))
 
 # nfl_pbp_full <- nfl_pbp_full |> mutate(
 #   game_year = year(as.Date(game_date))
