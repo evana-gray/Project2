@@ -57,36 +57,7 @@ nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 # player age at at gametime
 # year(game_date)
 # player years of experience
-nfl_pbp <- nfl_pbp |> 
-  mutate(
-    age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
-    game_year = year(as.Date(game_date)),
-    years_experience = game_year - rookie_season,
-    side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
-    penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
-  ) |>
-  filter(position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR"))
 
-# nfl_pbp_full <- nfl_pbp_full |> mutate(
-#   game_year = year(as.Date(game_date))
-# )
-
-pen_year_conf <- nfl_pbp |>
-  group_by(game_year, team_conf) |>
-  summarize(Penalties_Taken = sum(penalty_yards, na.rm = TRUE))
-
-gline_data <- nfl_pbp |>
-  drop_na(position_group, game_year) |>
-  group_by(position_group, game_year) |>
-  summarize(count = n()) |>
-  arrange(position_group, game_year)
-
-gbar2_data <- nfl_pbp |>
-  drop_na(position_group, penalty_type) |>
-  group_by(position_group, penalty_type) |>
-  summarize(count = n()) |>
-  arrange(position_group,desc(count)) |>
-  slice(1:3)
 
 
 
@@ -103,9 +74,9 @@ ui <- fluidPage(
       radioButtons(
         "conf",
         "Conference",
-        choiceNames = list("All","AFC","NFC"),
-        choiceValues = list(c("AFC","NFC"),"AFC","NFC"),
-        selected = "All"
+        choiceNames = list("Both","AFC","NFC"),
+        choiceValues = list("both", "AFC", "NFC"),
+        selected = "both"
         ),
       sliderInput(
         "year",
@@ -119,21 +90,99 @@ ui <- fluidPage(
       actionButton("subset","Subset and Run")
       ),
     
-      mainPanel(plotOutput("plot1"))
+      mainPanel(
+        plotOutput("plot1"),
+        plotOutput("plot2")
+        )
     )
 )
 
 ##             SERVER
 server <- function(input,output,session){
   
+#recalculate when subset button pressed
+  observeEvent(
+    input$subset, {
+    
+      
+      if(input$conf == "both"){
+        conf_sub <- c('NFC','AFC')
+      } else {
+        conf_sub <- input$conf
+      }      
+      
+      
+      
+######################################
+#Subset original data
+######################################  
+    
+  nfl_pbp <- nfl_pbp |> 
+    mutate(
+      age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
+      game_year = year(as.Date(game_date)),
+      years_experience = game_year - rookie_season,
+      side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
+      penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
+    ) |>
+    filter(
+      position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR") &
+      between(game_year, input$year[1], input$year[2]) & team_conf %in% conf_sub
+      )
+  
+  pen_year_conf <- nfl_pbp |>
+    group_by(game_year, team_conf) |>
+    summarize(Penalties_Taken = sum(penalty_yards, na.rm = TRUE))
+  
+  gline_data <- nfl_pbp |>
+    drop_na(position_group, game_year) |>
+    group_by(position_group, game_year) |>
+    summarize(count = n()) |>
+    arrange(position_group, game_year)
+  
+  gbar2_data <- nfl_pbp |>
+    drop_na(position_group, penalty_type) |>
+    group_by(position_group, penalty_type) |>
+    summarize(count = n()) |>
+    arrange(position_group,desc(count)) |>
+    slice(1:3)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+######################################
+#Plots
+######################################
+  
   output$plot1 <- renderPlot({
     
+    #Line graph 1 - Penalties taken by conference and year
+    # NFL Conference Colors https://www.trucolor.net/portfolio/national-football-league-official-colors-additional-records-1920-through-present/
     gline1 <- ggplot(pen_year_conf, aes(x = game_year, y = Penalties_Taken, color= team_conf))
     gline1 + geom_line(size = 2.5) +
       labs(title = "Penalties Taken by Conference", x = "Year", y = "Penalties Taken") +
       scale_color_manual(values = c("#C8102E","#003A70")) +
       theme_minimal() +
       theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
+  })
+  
+  output$plot2 <- renderPlot({
+    
+    #bar graph one positional group penalties by conference
+    gbar1 <- ggplot(nfl_pbp, aes(x = position_group, fill = team_conf))
+    gbar1 + geom_bar(stat = "count", position = "dodge") +
+      labs(title = "Penalties Taken by Positional Group and Conference", x = "Position Group", y = "Penalties Taken") +
+      scale_fill_manual(values = c("#C8102E","#003A70")) +
+      theme_minimal() +
+      theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
+  })
+  
+  
   })
 }
 
