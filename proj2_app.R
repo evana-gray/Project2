@@ -63,7 +63,7 @@ nfl_pbp <- nfl_pbp |>
     side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
     penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
   ) |>
-  filter(!(position_group %in% c('SPEC', 'NA')))
+  filter(position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR"))
 
 nfl_pbp_full <- nfl_pbp_full |> mutate(
   game_year = year(as.Date(game_date))
@@ -102,7 +102,7 @@ nfl_pbp_full <- nfl_pbp_full |> mutate(
 ############################################
 # Static Tables and Plots
 ############################################
-
+#Used https://r-graphics.org/index.html "R Graphics Cookbook" for reference
 
 #contingency table 1 - what positional groups commit the most penalties, what about penalty yards?
 nfl_pbp |>
@@ -153,15 +153,15 @@ gline1 + geom_line(size = 2.5) +
   labs(title = "Penalties Taken by Conference", x = "Year", y = "Penalties Taken") +
   scale_color_manual(values = c("#C8102E","#003A70")) +
   theme_minimal() +
-  theme(legend.position = "top", legend.direction = "horizontal")
+  theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
 
 #bar graph one positional group penalties by conference
 gbar1 <- ggplot(nfl_pbp, aes(x = position_group, fill = team_conf))
 gbar1 + geom_bar(stat = "count", position = "dodge") +
-  labs(title = "Penalties Taken by Positional Group and Conference", x = "Positional Group", y = "Penalties Taken") +
+  labs(title = "Penalties Taken by Positional Group and Conference", x = "Position Group", y = "Penalties Taken") +
   scale_fill_manual(values = c("#C8102E","#003A70")) +
   theme_minimal() +
-  theme(legend.position = "top", legend.direction = "horizontal")
+  theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
 
 
 
@@ -170,6 +170,15 @@ gbar1 + geom_bar(stat = "count", position = "dodge") +
 gbox1 <- ggplot(nfl_pbp, aes(x = position_group,fill = position_group, y = years_experience))
 gbox1 + geom_violin() + 
   scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
-  labs(title = "Distribution of Experience (Years) Among Penalty Takers by Position Group", x = "Positional Group", y = "Years Experience") +
+  labs(title = "Distribution of Experience (Years) Among Penalized Players by Position Group", x = "Position Group", y = "Years Experience") +
   theme_minimal()+
-  theme(legend.position = "top", legend.direction = "horizontal")
+  theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
+
+
+#Cleveland dot plot - descending avg years of experience by penalty type
+gdot1 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(penalty_type, years_experience_mean))) + 
+                  geom_point() 
+gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Experience (Years)", y = "Penalty") +
+  theme_minimal()
+  
+
