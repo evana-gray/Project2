@@ -70,33 +70,6 @@ nfl_pbp_full <- nfl_pbp_full |> mutate(
 )
 
 
-#Create Penalties Per Game Measure
-#full dataset needed
-# 
-# getPenaltiesPerGame <- function(){
-#   
-#   count_unique_games_all <- length(unique(nfl_pbp_full$game_id))
-#   penalty_count <- length(unique(nfl_pbp$penaltyid))
-#   
-#   penalties_per_game <- penalty_count/count_unique_games_all
-#   
-#   return(penalties_per_game)
-#   
-# }
-# 
-# 
-# penalties_per_game_tbl <- nfl_pbp_full |>
-#   group_by(game_year, gsis_id) |>
-#   summarize(games = length(unique(nfl_pbp_full$game_id)))
-# 
-
-
-
-
-
-
-
-
 
 
 ############################################
@@ -110,7 +83,6 @@ nfl_pbp |>
   group_by(position_group) |>
   summarize(count = n()) |>
   arrange(desc(count))
-
 
 #contingency table 2 - penalties committed by years of experience
 nfl_pbp |>
@@ -133,13 +105,16 @@ pen_year_conf <- nfl_pbp |>
 
 pen_year_conf
 
+count_rows <- function(x){n}
 
 #Measures of Spread for age by penalty type
 fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
 
 five_summary_type <- nfl_pbp |> 
  group_by(penalty_type)|> 
- summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE)) |>
+ summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
+           count = n() #include count
+           ) |>
  arrange(years_experience_mean)
 
 print(five_summary_type, n = 50)
@@ -174,6 +149,12 @@ gbox1 + geom_violin() +
   theme_minimal()+
   theme(legend.position = "none")
 
+#Cleveland dot plot - total penalty count by penalty type
+gdot1 <- ggplot(five_summary_type, aes(x = count, y = reorder(penalty_type, count))) + 
+  geom_point() 
+gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Penalty Count", y = "Penalty") +
+  theme_minimal()
+
 
 #Cleveland dot plot - descending avg years of experience by penalty type
 gdot1 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(penalty_type, years_experience_mean))) + 
@@ -181,4 +162,21 @@ gdot1 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(pe
 gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Experience (Years)", y = "Penalty") +
   theme_minimal()
   
+
+
+#bar graph - most common penalties by position group
+
+gbar2_data <- nfl_pbp |>
+  drop_na(position_group, penalty_type) |>
+  group_by(position_group, penalty_type) |>
+  summarize(count = n()) |>
+  arrange(position_group,desc(count)) |>
+  slice(1:3)
+
+
+gbar2 <- ggplot(gbar2_data, aes(x = penalty_type,count, y = count))
+gbar2 + geom_col() +
+  scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
+  theme_minimal() +
+  facet_wrap(~ position_group, nrow = 3, scales = "free_x")
 
