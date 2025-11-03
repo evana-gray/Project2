@@ -12,33 +12,32 @@ library(scales)
 # Read in 2009 - 2018 NFL play by play data 
 ############################################
 
-# first, read NFL play by play csv (have to manage file size before actually reading in)
+# See OriginalData_Split.r - this greatly reduces the size of the dataset read into the project files
 # then, use nflreadr::load_players() and load_teams() to gather all player and info (position, date of birth, etc) to use for left join
 # https://nflreadr.nflverse.com/reference/load_players.html
 
-# original file is listed in gitignore so it won't overwhelm github pushes
-nfl_pbp <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
-#nfl_pbp_full <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
+#open pre-filtered file for size considerations
+nfl_pbp <- read_csv("NFL_PlayByPlay_Split.csv") 
 
-# initial subset and clean
+
 nfl_pbp <- nfl_pbp |> 
-  filter(penalty_yards > 0 & play_type %in% c('run','pass','no_play') & length(penalty_player_id) >= 2) |>
   select(play_id, game_id, defteam, game_date, home_team, play_type, game_half, qtr,
-        penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
+         penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
   rename("gsis_id" = penalty_player_id,
-        "team_abbr" = penalty_team) |>
+         "team_abbr" = penalty_team) |>
   mutate(penalty_type = str_replace_na(penalty_type,"Other"))
 
 #vectorized/anonymous function w/ switch() to rename team_abbr of teams that have relocated
- nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr, 
-                             FUN = function(x){
-                               switch(x,
-                                       "JAC" = "JAX",
-                                       "STL" = "LA",
-                                       "SD" = "LAC",
-                                       "OAK" = "LV",
-                                        x)}
-                             )
+nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr, 
+                            FUN = function(x){
+                              switch(x,
+                                     "JAC" = "JAX",
+                                     "STL" = "LA",
+                                     "SD" = "LAC",
+                                     "OAK" = "LV",
+                                     x)}
+)
+
  ##Check rename
  # unique(nfl_pbp$team_abbr)
  # unique(nfl_pbp$team_division)

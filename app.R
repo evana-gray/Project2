@@ -18,12 +18,11 @@ library(scales)
 # https://nflreadr.nflverse.com/reference/load_players.html
 
 # original file is listed in gitignore so it won't overwhelm github pushes
-nfl_pbp <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
+nfl_pbp <- read_csv("NFL_PlayByPlay_Split.csv") 
 #nfl_pbp_full <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
 
 # initial subset and clean
 nfl_pbp <- nfl_pbp |> 
-  filter(penalty_yards > 0 & play_type %in% c('run','pass','no_play') & length(penalty_player_id) >= 2) |>
   select(play_id, game_id, defteam, game_date, home_team, play_type, game_half, qtr,
          penalty_team, penalty_player_id, penalty_yards, penalty_type) |>
   rename("gsis_id" = penalty_player_id,
