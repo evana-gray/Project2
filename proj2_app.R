@@ -161,4 +161,5 @@ gbar1 + geom_bar(stat = "count", position = "dodge") +
 #positional box and whisker - experience distribution by 
 gbox1 <- ggplot(nfl_pbp, aes(x = position_group, y = years_experience))
 gbox1 + geom_boxplot() +
+  labs(title = "Distribution of Experience (Years) Among Penalty Takers by Position Group", x = "Positional Group", y = "Years Experience") +
   theme_minimal()
