@@ -95,6 +95,17 @@ ui <- fluidPage(
         step = 1,
         sep = ""
       ),
+      
+      sliderInput(
+        "exp",
+        "Player Years of Experience",
+        min = 0,
+        max = 25,
+        value = c(0,25),
+        step = 1,
+        sep = ""
+      ),
+      
       actionButton("subset","Subset and Run")
       ),
     
@@ -134,9 +145,9 @@ server <- function(input,output,session){
       
       
       
-######################################
-#Subset original data
-######################################  
+##################################################
+# Create data subsets to populate plots and tables
+##################################################
     
   nfl_pbp <- nfl_pbp |> 
     mutate(
@@ -152,7 +163,8 @@ server <- function(input,output,session){
         # compare game year to first and second elements of input$year range
       between(game_year, input$year[1], input$year[2]) & 
       team_conf %in% conf_sub &
-      side_of_ball %in% side_sub
+      side_of_ball %in% side_sub &
+      between(years_experience, input$exp[1], input$exp[2])
       )
   
   pen_year_conf <- nfl_pbp |>
@@ -232,7 +244,7 @@ server <- function(input,output,session){
     #Cleveland dot plot - total penalty count by penalty type
     gdot1 <- ggplot(five_summary_type, aes(x = count, y = reorder(penalty_type, count))) + 
       geom_point() 
-    gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Penalty Count", y = "Penalty") +
+    gdot1 + labs(title = "Total Penalties by Penalty Type", x = "Penalty Count", y = "Penalty") +
       theme_minimal()
   })
   
@@ -240,7 +252,7 @@ server <- function(input,output,session){
     #Cleveland dot plot - descending avg years of experience by penalty type
     gdot2 <- ggplot(five_summary_type, aes(x = years_experience_mean, y = reorder(penalty_type, years_experience_mean))) + 
       geom_point() 
-    gdot2 + labs(title = "Avg Years of Experience by Penalty", x = "Experience (Years)", y = "Penalty") +
+    gdot2 + labs(title = "Avg Years of Experience by Penalty", x = "Avg Experience (Years)", y = "Penalty") +
       theme_minimal()
   })
   

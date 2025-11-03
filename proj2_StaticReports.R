@@ -150,7 +150,7 @@ gbox1 + geom_violin() +
 #Cleveland dot plot - total penalty count by penalty type
 gdot1 <- ggplot(five_summary_type, aes(x = count, y = reorder(penalty_type, count))) + 
   geom_point() 
-gdot1 + labs(title = "Avg Years of Experience by Penalty", x = "Penalty Count", y = "Penalty") +
+gdot1 + labs(title = "Total Penalties by Penalty Type", x = "Penalty Count", y = "Penalty") +
   theme_minimal()
 
 
