@@ -201,7 +201,8 @@ gbar2 + geom_bar(stat = "identity") +
   facet_wrap(~ position_group, nrow = 3, scales = "free_x") +
   ylim(0,5000) +
   theme_minimal() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        axis.text.y = element_blank())
 
 
 
