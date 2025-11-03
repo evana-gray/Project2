@@ -91,6 +91,7 @@ ui <- fluidPage(
       ),
     
       mainPanel(
+        tableOutput("table1"),
         plotOutput("plot1"),
         plotOutput("plot2")
         )
@@ -127,7 +128,7 @@ server <- function(input,output,session){
     ) |>
     filter(
       position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR") &
-      between(game_year, input$year[1], input$year[2]) & team_conf %in% conf_sub
+      between(game_year, input$year[1], input$year[2]) & team_conf %in% conf_sub # compare game year to first and second elements of input$year range
       )
   
   pen_year_conf <- nfl_pbp |>
@@ -158,6 +159,21 @@ server <- function(input,output,session){
 ######################################
 #Plots
 ######################################
+  
+  output$table1 <- renderTable({
+    
+    fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
+    
+    five_summary_type <- nfl_pbp |> 
+      group_by(penalty_type)|> 
+      summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
+                count = n() #include count
+      ) |>
+      arrange(years_experience_mean)
+    
+    print(five_summary_type, n = 50)
+    
+  })
   
   output$plot1 <- renderPlot({
     
