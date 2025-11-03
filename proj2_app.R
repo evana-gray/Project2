@@ -205,5 +205,3 @@ gbar2 + geom_bar(stat = "identity") +
         axis.text.y = element_blank())
 
 
-
-
