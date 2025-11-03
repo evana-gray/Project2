@@ -18,7 +18,7 @@ library(scales)
 
 # original file is listed in gitignore so it won't overwhelm github pushes
 nfl_pbp <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
-nfl_pbp_full <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
+#nfl_pbp_full <- read_csv("NFL Play by Play 2009-2018 (v5).csv") 
 
 # initial subset and clean
 nfl_pbp <- nfl_pbp |> 
@@ -66,9 +66,9 @@ nfl_pbp <- nfl_pbp |>
   ) |>
   filter(position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR"))
 
-nfl_pbp_full <- nfl_pbp_full |> mutate(
-  game_year = year(as.Date(game_date))
-)
+# nfl_pbp_full <- nfl_pbp_full |> mutate(
+#   game_year = year(as.Date(game_date))
+# )
 
 
 
