@@ -172,7 +172,7 @@ gbox1 + geom_violin() +
   scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
   labs(title = "Distribution of Experience (Years) Among Penalized Players by Position Group", x = "Position Group", y = "Years Experience") +
   theme_minimal()+
-  theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
+  theme(legend.position = "none")
 
 
 #Cleveland dot plot - descending avg years of experience by penalty type
