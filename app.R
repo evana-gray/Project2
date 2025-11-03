@@ -71,6 +71,10 @@ nfl_pbp <- nfl_pbp |>
 #   game_year = year(as.Date(game_date))
 # )
 
+pen_year_conf <- nfl_pbp |>
+  group_by(game_year, team_conf) |>
+  summarize(Penalties_Taken = sum(penalty_yards, na.rm = TRUE))
+
 gline_data <- nfl_pbp |>
   drop_na(position_group, game_year) |>
   group_by(position_group, game_year) |>
@@ -89,6 +93,8 @@ gbar2_data <- nfl_pbp |>
 ##############################################
 # SHINY APP
 ##############################################
+
+##               UI
 ui <- fluidPage(
   titlePanel("Evan Gray - Project 2"),
   sidebarLayout(
@@ -112,12 +118,23 @@ ui <- fluidPage(
       ),
       actionButton("subset","Subset and Run")
       ),
-      mainPanel()
+    
+      mainPanel(plotOutput("plot1"))
     )
 )
 
+##             SERVER
 server <- function(input,output,session){
   
+  output$plot1 <- renderPlot({
+    
+    gline1 <- ggplot(pen_year_conf, aes(x = game_year, y = Penalties_Taken, color= team_conf))
+    gline1 + geom_line(size = 2.5) +
+      labs(title = "Penalties Taken by Conference", x = "Year", y = "Penalties Taken") +
+      scale_color_manual(values = c("#C8102E","#003A70")) +
+      theme_minimal() +
+      theme(legend.title = element_blank(), legend.position = "top", legend.direction = "horizontal")
+  })
 }
 
 # Run the application 

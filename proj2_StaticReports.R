@@ -104,9 +104,6 @@ pen_year_conf <- nfl_pbp |>
   group_by(game_year, team_conf) |>
   summarize(Penalties_Taken = sum(penalty_yards, na.rm = TRUE))
 
-pen_year_conf
-
-count_rows <- function(x){n}
 
 #Measures of Spread for age by penalty type
 fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
