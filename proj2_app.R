@@ -55,13 +55,16 @@ nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 # player age at at gametime
 # year(game_date)
 # player years of experience
-nfl_pbp <- nfl_pbp |> mutate(
-  age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
-  game_year = year(as.Date(game_date)),
-  years_experience = game_year - rookie_season,
-  side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
-  penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
-)
+nfl_pbp <- nfl_pbp |> 
+  mutate(
+    age = as.integer((as.Date(game_date) - as.Date(birth_date))/365),
+    game_year = year(as.Date(game_date)),
+    years_experience = game_year - rookie_season,
+    side_of_ball = if_else(defteam == team_abbr,"Offense","Defense"),
+    penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
+  ) |>
+  filter(!(position_group %in% c('SPEC', 'NA')))
+
 nfl_pbp_full <- nfl_pbp_full |> mutate(
   game_year = year(as.Date(game_date))
 )
@@ -146,23 +149,27 @@ print(five_summary_type, n = 50)
 # NFL Conference Colors https://www.trucolor.net/portfolio/national-football-league-official-colors-additional-records-1920-through-present/
 
 gline1 <- ggplot(pen_year_conf, aes(x = game_year, y = Penalties_Taken, color= team_conf))
-gline1 + geom_line(size = 1.5) +
+gline1 + geom_line(size = 2.5) +
   labs(title = "Penalties Taken by Conference", x = "Year", y = "Penalties Taken") +
   scale_color_manual(values = c("#C8102E","#003A70")) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top", legend.direction = "horizontal")
 
 #bar graph one positional group penalties by conference
 gbar1 <- ggplot(nfl_pbp, aes(x = position_group, fill = team_conf))
 gbar1 + geom_bar(stat = "count", position = "dodge") +
   labs(title = "Penalties Taken by Positional Group and Conference", x = "Positional Group", y = "Penalties Taken") +
   scale_fill_manual(values = c("#C8102E","#003A70")) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top", legend.direction = "horizontal")
 
 
 
 #positional box and whisker - experience distribution by 
-gbox1 <- ggplot(nfl_pbp, aes(x = position_group, y = years_experience))
-gbox1 + geom_boxplot() +
-  geom_point(position = 'jitter', alpha = .1) +
+#Fill colors taken from teams dataset - manually ordered to be distinct 
+gbox1 <- ggplot(nfl_pbp, aes(x = position_group,fill = position_group, y = years_experience))
+gbox1 + geom_violin() + 
+  scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
   labs(title = "Distribution of Experience (Years) Among Penalty Takers by Position Group", x = "Positional Group", y = "Years Experience") +
-  theme_minimal()
+  theme_minimal()+
+  theme(legend.position = "top", legend.direction = "horizontal")
