@@ -60,9 +60,10 @@ nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 
 
 
-
+##############################################
 ##############################################
 # SHINY APP
+##############################################
 ##############################################
 
 ##               UI
@@ -123,7 +124,7 @@ ui <- fluidPage(
         ),
         #layout_columns full screen for top table as it's widest
         #layout_column_wrap for bottom tables
-        #shiny.posit.co for formatting 
+        #shiny.posit.co for formatting help
         tabPanel("Subsettable Tables",
           layout_columns(
           card(
@@ -318,7 +319,7 @@ server <- function(input,output,session){
 #Numeric Analysis Tables
 ######################################
   
-#https://rstudio.github.io/DT.html for datatable( options details)
+#https://rstudio.github.io/DT.html for datatable & (options) details
   
   output$table1 <- renderDT({
 
