@@ -83,7 +83,7 @@ nfl_pbp |>
   drop_na(position_group) |>
   group_by(position_group) |>
   summarize("Penalties" = n()) |>
-  arrange(desc(count))
+  arrange(desc(Penalties))
 
 #contingency table 2 - penalties committed by years of experience
 nfl_pbp |>
@@ -97,7 +97,7 @@ nfl_pbp |>
   drop_na(game_year, team_conf) |>
   group_by(game_year, team_conf) |>
   summarize("Penalties" = n()) |>
-  pivot_wider(names_from = team_conf, values_from = count) 
+  pivot_wider(names_from = team_conf, values_from = Penalties) 
 
 #reorganized with summarize for plotting penalties by year and conference
 pen_year_conf <- nfl_pbp |>
@@ -184,17 +184,17 @@ gl1 + geom_line(size = 2.5) +
 gbar2_data <- nfl_pbp |>
   drop_na(position_group, penalty_type) |>
   group_by(position_group, penalty_type) |>
-  summarize(count = n()) |>
-  arrange(position_group,desc(count)) |>
+  summarize("Penalties" = n()) |>
+  arrange(position_group,desc(Penalties)) |>
   slice(1:3)
 
 
-gbar2 <- ggplot(gbar2_data, aes(x = penalty_type, y = count, fill = position_group))
+gbar2 <- ggplot(gbar2_data, aes(x = penalty_type, y = Penalties, fill = position_group))
 gbar2 + geom_bar(stat = "identity") +
   scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32])) +
   scale_x_discrete(labels = label_wrap(10)) +
   labs(title = "Top 3 Most Common Penalties by Position", x = "Penalty", y = "Penalties") +
-  geom_text(aes(label=count), vjust=-0.2) +
+  geom_text(aes(label=Penalties), vjust=-0.2) +
   facet_wrap(~ position_group, nrow = 3, scales = "free_x") +
   ylim(0,5000) +
   theme_minimal() +

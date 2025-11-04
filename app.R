@@ -359,11 +359,11 @@ server <- function(input,output,session){
       group_by(penalty_type)|>
       summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
                 Penalties = n() #include count
+                
       ) |>
       arrange(years_experience_mean),
     rownames = FALSE
-  ) %>%
-    formatRound(columns = 2:7, digits = 2)
+  ) 
   })
   
   output$table2 <- renderDT({
