@@ -110,16 +110,21 @@ ui <- fluidPage(
       ),
     
       mainPanel(
-        plotOutput("plot1"),
-        plotOutput("plot2"),
-        plotOutput("plot3"),
-        plotOutput("plot4"),
-        plotOutput("plot5"),
-        plotOutput("plot6"),
-        plotOutput("plot7")
-        
-        # tableOutput("table1")
+        tabsetPanel(
+        tabPanel("Data Exploration - Plots",
+          plotOutput("plot1"),
+          plotOutput("plot2"),
+          plotOutput("plot3"),
+          plotOutput("plot4"),
+          plotOutput("plot5"),
+          plotOutput("plot6"),
+          plotOutput("plot7")
+        ),
+        tabPanel("Data Exploration - Tables",
+          tableOutput("table1")
         )
+        )
+       )
     )
 )
 
@@ -286,20 +291,20 @@ server <- function(input,output,session){
 #Numeric Analysis Tables
 ######################################
   
-  # output$table1 <- renderTable({
-  #   
-  #   fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
-  #   
-  #   five_summary_type <- nfl_pbp |> 
-  #     group_by(penalty_type)|> 
-  #     summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
-  #               count = n() #include count
-  #     ) |>
-  #     arrange(years_experience_mean)
-  #   
-  #   print(five_summary_type, n = 50)
-  # })
-  # 
+  output$table1 <- renderTable({
+
+    fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
+
+    five_summary_type <- nfl_pbp |>
+      group_by(penalty_type)|>
+      summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
+                count = n() #include count
+      ) |>
+      arrange(years_experience_mean)
+
+    print(five_summary_type, n = 50)
+  })
+
   
 })
   
