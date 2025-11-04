@@ -82,21 +82,21 @@ nfl_pbp <- nfl_pbp |>
 nfl_pbp |>
   drop_na(position_group) |>
   group_by(position_group) |>
-  summarize(count = n()) |>
+  summarize("Penalties" = n()) |>
   arrange(desc(count))
 
 #contingency table 2 - penalties committed by years of experience
 nfl_pbp |>
   drop_na(years_experience) |>
   group_by(years_experience) |>
-  summarize(count = n()) |>
+  summarize("Penalties" = n()) |>
   arrange(years_experience)
 
 #contingency table 3 - penalties by year and conference 
 nfl_pbp |>
   drop_na(game_year, team_conf) |>
   group_by(game_year, team_conf) |>
-  summarize(count = n()) |>
+  summarize("Penalties" = n()) |>
   pivot_wider(names_from = team_conf, values_from = count) 
 
 #reorganized with summarize for plotting penalties by year and conference

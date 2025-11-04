@@ -7,6 +7,7 @@ library(shiny)
 library(bslib)
 library(shinyalert)
 library(scales)
+library(DT)
 
 
 ############################################
@@ -111,7 +112,7 @@ ui <- fluidPage(
     
       mainPanel(
         tabsetPanel(
-        tabPanel("Data Exploration - Plots",
+        tabPanel("Subsettable Plots",
           plotOutput("plot1"),
           plotOutput("plot2"),
           plotOutput("plot3"),
@@ -120,9 +121,35 @@ ui <- fluidPage(
           plotOutput("plot6"),
           plotOutput("plot7")
         ),
-        tabPanel("Data Exploration - Tables",
-          tableOutput("table1")
-        )
+        #layout_columns full screen for top table as it's widest
+        #layout_column_wrap for bottom tables
+        #shiny.posit.co for formatting 
+        tabPanel("Subsettable Tables",
+          layout_columns(
+          card(
+            full_screen = TRUE,
+            card_header("Descriptive Statistics by Penalty Type"),
+            DT::dataTableOutput("table1")
+            )),
+          layout_column_wrap(
+          card(
+            card_header("Penalties by Position Group"),
+            DT::dataTableOutput("table2")
+            ),
+          card(
+            card_header("Penalties by Years of Experience"),
+            DT::dataTableOutput("table3")
+            ),
+          )
+        ),
+        tabPanel("Create Your Own Comparison",
+                 layout_columns(
+                   card(
+                     full_screen = TRUE,
+                     card_header("Custom Comparison"),
+                     #DT::dataTableOutput("table1")
+                   ))
+                 )
         )
        )
     )
@@ -291,18 +318,48 @@ server <- function(input,output,session){
 #Numeric Analysis Tables
 ######################################
   
-  output$table1 <- renderTable({
+#https://rstudio.github.io/DT.html for datatable( options details)
+  
+  output$table1 <- renderDT({
 
     fxlist <- list("mean" = mean, "median" = median, "min" = min, "max" = max, "sd" = sd)
-
+  datatable(
     five_summary_type <- nfl_pbp |>
       group_by(penalty_type)|>
       summarize(across(years_experience,.fns = fxlist,.names = "{.col}_{.fn}", na.rm = TRUE),
-                count = n() #include count
+                Penalties = n() #include count
       ) |>
-      arrange(years_experience_mean)
-
-    print(five_summary_type, n = 50)
+      arrange(years_experience_mean),
+    rownames = FALSE
+  ) %>%
+    formatRound(columns = 2:7, digits = 2)
+  })
+  
+  output$table2 <- renderDT({
+    
+    datatable(nfl_pbp |>
+      drop_na(position_group) |>
+      group_by(position_group) |>
+      summarize(Penalties = n()) |>
+      arrange(desc(Penalties))
+      ,
+      options = list(dom = "t"),
+      rownames = FALSE
+    ) 
+  })
+  
+  output$table3 <- renderDT({
+    
+    datatable(
+      nfl_pbp |>
+      drop_na(years_experience) |>
+      group_by(years_experience) |>
+      summarize(Penalties = n()) |>
+      arrange(years_experience)
+      ,
+    options = list(dom = "t"),
+    rownames = FALSE
+    )
   })
 
   
