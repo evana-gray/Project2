@@ -124,19 +124,27 @@ ui <- fluidPage(
     
       mainPanel(
         tabsetPanel(
-        tabPanel("Subsettable Plots",
+        tabPanel("Data Download",
+         downloadLink("exportprocess",label = "Download.csv"),
+         card(
+          full_screen = TRUE,
+          card_header("All Fields For Download"),
+          DT::dataTableOutput("exportdata")
+            )
+        ),
+        tabPanel("Data Exploration - Subsettable Plots",
+          plotOutput("plot6"),
+          plotOutput("plot7"),
           plotOutput("plot1"),
           plotOutput("plot2"),
           plotOutput("plot3"),
           plotOutput("plot4"),
-          plotOutput("plot5"),
-          plotOutput("plot6"),
-          plotOutput("plot7")
+          plotOutput("plot5")
         ),
         #layout_columns full screen for top table as it's widest
         #layout_column_wrap for bottom tables
         #shiny.posit.co for formatting help
-        tabPanel("Subsettable Tables",
+        tabPanel("Data Exploration - Subsettable Tables",
           layout_columns(
           card(
             full_screen = TRUE,
@@ -170,7 +178,14 @@ ui <- fluidPage(
 ##             SERVER
 server <- function(input,output,session){
   
-#recalculate when subset button pressed
+#For exporting data!
+#Uses method here: https://stackoverflow.com/questions/61784150/how-can-i-get-download-handler-to-work-with-observeevent-in-r-shiny
+#creates reactive list outside of the below observeEvent()
+#will populate with data table and reference again below at end of server section, outside of observeEvent() before downloadHandler 
+  reactiveexport <- reactiveValues()
+  
+  
+#reevaluate EVERYTHING when subset button pressed
   observeEvent(
     input$subset, {
     
@@ -379,7 +394,7 @@ server <- function(input,output,session){
   })
 
 ######################################
-#Custom Table
+#Custom Plot
 ######################################
 
   
@@ -393,8 +408,33 @@ server <- function(input,output,session){
       theme(legend.position = "none")
       
   })
+
+######################################
+#Table For Data Download Tab
+######################################
   
-})
+  
+  
+  output$exportdata <- renderDT({
+    
+    exportdata1 <- nfl_pbp |>
+      select(play_id, game_id, side_of_ball, defteam, game_date, home_team, play_type, penalty_yards, penalty_type,
+             display_name, team_abbr, team_conf, position, position_group, Height, weight, college_name,
+             college_conference, rookie_season, draft_year, draft_round, years_experience)
+    
+   reactiveexport$data <- exportdata1
+  })
+  
+}) 
+
+  output$exportprocess <- downloadHandler(
+    filename = function(){
+      paste0("ExportData-",Sys.Date(),".csv")
+    },
+    content = function(file){
+      write.csv(reactiveexport$data,file)
+    }
+  )
   
 }
 
