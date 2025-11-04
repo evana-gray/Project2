@@ -68,10 +68,10 @@ nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 
 ##               UI
 ui <- fluidPage(
-  titlePanel("Evan Gray - Project 2"),
+  titlePanel("Evan Gray - Project 2 - NFL Analysis of Penalties"),
   sidebarLayout(
     sidebarPanel(
-      
+      h2("Select Subsetting Variables:"),  
       radioButtons(
         "conf",
         "Conference",
@@ -107,8 +107,19 @@ ui <- fluidPage(
         step = 1,
         sep = ""
       ),
+      actionButton("subset","Subset and Run"),
       
-      actionButton("subset","Subset and Run")
+      h2("Create Your Own - Pick Axes:"),  
+       selectizeInput("y_var",
+                      "Select Numeric Variable (Calculation = Mean)",
+                      choices = list("Height", "weight", "years_experience"), 
+                      selected = "Height"
+                      ),
+      selectizeInput("x_var",
+                     "Select Categorical Variable",
+                     choices= list("position_group","team_abbr", "DraftRd","RookieSeason", "college_conference"), 
+                     selected = "position_group"
+                     ),
       ),
     
       mainPanel(
@@ -147,8 +158,8 @@ ui <- fluidPage(
                  layout_columns(
                    card(
                      full_screen = TRUE,
-                     card_header("Custom Comparison"),
-                     #DT::dataTableOutput("table1")
+                     card_header("Custom Comparison Among NFL Players Taking Penalties"),
+                     plotOutput("custom")
                    ))
                  )
         )
@@ -189,7 +200,11 @@ server <- function(input,output,session){
       years_experience = game_year - rookie_season,
       side_of_ball = if_else(position_group %in% c("OL","QB","RB","TE","WR"),"Offense",
                              if_else(position_group %in% c("DB","DL","LB"),"Defense","Special Teams")),
-      penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id)
+      penaltyid = paste0(nfl_pbp$play_id,'-',nfl_pbp$game_id),
+      DraftRd = as.character(draft_round),
+      RookieSeason = as.character(rookie_season),
+      Height = round(height/12,digits = 2)
+      
     ) |>
     filter(
       position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR","SPEC") &
@@ -363,6 +378,21 @@ server <- function(input,output,session){
     )
   })
 
+######################################
+#Custom Table
+######################################
+
+  
+  output$custom <- renderPlot({
+
+    ggplot(nfl_pbp, aes_string(x = input$x_var, y = input$y_var, fill = input$x_var)) +
+      geom_bar(stat = "summary", fun = "mean") +
+      scale_fill_manual(values = c(teams$team_color3[1:3], teams$team_color[2:32], teams$team_color4)) + #large enough list of colors to accommodate long x axis list
+      scale_x_discrete(labels = label_wrap(10)) +
+      theme_minimal() +
+      theme(legend.position = "none")
+      
+  })
   
 })
   

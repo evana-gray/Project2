@@ -200,5 +200,3 @@ gbar2 + geom_bar(stat = "identity") +
   theme_minimal() +
   theme(legend.position = "none",
         axis.text.y = element_blank())
-
-
