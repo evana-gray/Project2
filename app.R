@@ -447,6 +447,7 @@ output$nfllogo <- renderImage({
                 Penalties = n() #include count
                 
       ) |>
+      mutate(across(where(is.numeric), round, digits = 2))|> #apply round to all numeric variables
       arrange(years_experience_mean),
     rownames = FALSE
   ) 

@@ -5,7 +5,7 @@ account: evangraya
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15953083
-bundleId: 11134868
+bundleId: 11135001
 url: https://evangraya.shinyapps.io/Project2/
 version: 1
 asMultiple: FALSE
