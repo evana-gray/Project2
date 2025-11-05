@@ -8,6 +8,7 @@ library(bslib)
 library(shinyalert)
 library(scales)
 library(DT)
+library(shinythemes)
 
 
 ############################################
@@ -66,19 +67,20 @@ nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
 ##############################################
 ##############################################
 
-##               UI
-ui <- fluidPage(
-  titlePanel("Evan Gray - Project 2 - NFL Analysis of Penalties"),
+##  UI FUNCTION
+ui <- fluidPage( theme = (shinytheme("cosmo")),
+  titlePanel("Evan Gray - Project 2 - Analysis of NFL Penalties"),
   sidebarLayout(
     sidebarPanel(
       h2("Select Subsetting Variables:"),  
+      
       radioButtons(
-        "conf",
-        "Conference",
-        choiceNames = list("Both","AFC","NFC"),
-        choiceValues = list("both", "AFC", "NFC"),
-        selected = "both"
-        ),
+        "type",
+        "Type of Play",
+        choiceNames = list("All","Run","Pass", "No Play"),
+        choiceValues = list("all", "run", "pass","no_play"),
+        selected = "all"
+      ),
       
       radioButtons(
         "side",
@@ -86,6 +88,14 @@ ui <- fluidPage(
         choiceNames = list("All","Offense","Defense","Special Teams"),
         choiceValues = list("all","Offense","Defense","Special Teams"),
         selected = "all"
+      ),
+      
+      radioButtons(
+        "conf",
+        "Conference",
+        choiceNames = list("Both","AFC","NFC"),
+        choiceValues = list("both", "AFC", "NFC"),
+        selected = "both"
       ),
       
       sliderInput(
@@ -107,6 +117,7 @@ ui <- fluidPage(
         step = 1,
         sep = ""
       ),
+      
       actionButton("subset","Subset and Run"),
       
       h2("Create Your Own - Pick Axes:"),  
@@ -124,6 +135,50 @@ ui <- fluidPage(
     
       mainPanel(
         tabsetPanel(
+        tabPanel("About",
+          #verbatimTextOutput("abouttext")
+          #textOutput("abouttext")
+          p("
+            The purpose of this shiny app is to investigate NFL penalty trends. Online, one can easily
+            find NFL stats related to individual production. It is harder to access information about
+            penalty types and their incidence. You'll find the answers to questions like 'what penalties
+            do the most inexperienced player commit vs. the most experienced?' or 'what are the most common
+            penalties by position?'
+            "),
+          p("
+            The data source is publicly available NFL play-by-play data downoaded from Kaggle. The dataset contained play specific data
+            for the years of 2009-2018. Due to size considerations, the dataset was filtered down to just plays where a penalty was 
+            assessed.
+            "),
+          p("
+            What's in this shiny app?
+            "),
+          p("
+            Sidebar Subsetting - choose the specific data you want to populate the shiny report graphs, plots and tables with. Make 
+            your selections, then hit 'Subset and Run'!
+            "),
+          p("
+            Data Download - this tab allows the user to download a dataset that the they can use to perform their own analyses. The 
+            exported data will obey the subset choices selected by the user. Just click 'Download.csv'.
+            "),
+          p("
+            Data Exporation - this section is split into two tabs: Subsettable Plots and Subsettable Tables. One shows pre-made faceted
+            graphs of different kinds that interact with the chosen subsets. The other shows pre-made tables that show a more detailed 
+            numeric summary of the data. 
+            "),
+          p("
+            Create Your Own Comparison - here you can make your own visualization (a bar chart) from a pre-selected list of numeric and
+            categorical variables. 
+            "),
+          p("
+            Data Source (play-by-play): https://www.kaggle.com/datasets/maxhorowitz/nflplaybyplay2009to2016/data
+            "),
+          p("
+            Data Source (player and team dimension data): 'nflreadr' package at https://nflreadr.nflverse.com/reference/
+            "),
+          imageOutput("nfllogo")
+          ),
+          
         tabPanel("Data Download",
          downloadLink("exportprocess",label = "Download.csv"),
          card(
@@ -175,8 +230,12 @@ ui <- fluidPage(
     )
 )
 
-##             SERVER
+## SERVER FUNCTION
 server <- function(input,output,session){
+  
+output$nfllogo <- renderImage({
+  list(src="NFL_logo.jpg")
+})
   
 #For exporting data!
 #Uses method here: https://stackoverflow.com/questions/61784150/how-can-i-get-download-handler-to-work-with-observeevent-in-r-shiny
@@ -189,6 +248,11 @@ server <- function(input,output,session){
   observeEvent(
     input$subset, {
     
+      if(input$type == "all"){
+        type_sub <- c("all", "run", "pass","no_play")
+      } else {
+        type_sub <- input$type
+      }    
       
       if(input$conf == "both"){
         conf_sub <- c('NFC','AFC')
@@ -225,6 +289,7 @@ server <- function(input,output,session){
       position_group %in% c("DB","DL","LB","OL","QB","RB","TE","WR","SPEC") &
         # compare game year to first and second elements of input$year range
       between(game_year, input$year[1], input$year[2]) & 
+      play_type %in% type_sub &
       team_conf %in% conf_sub &
       side_of_ball %in% side_sub &
       between(years_experience, input$exp[1], input$exp[2])
@@ -424,6 +489,7 @@ server <- function(input,output,session){
     
    reactiveexport$data <- exportdata1
   })
+
   
 }) 
 
