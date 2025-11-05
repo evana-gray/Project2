@@ -48,11 +48,30 @@ nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr,
 #load player and team specific information
 players <- load_players()
 teams <- load_teams()
-playerstats <- load_player_stats
+playerstats <- load_player_stats(seasons=c(seq(2009,2018,1))) #load player-game statistics overall for 10 year period
+
+#games played over 10 year span
+playersummary <- playerstats |> 
+  group_by(player_id) |>
+  summarise(games_played = n()) |>
+  arrange(player_id) |>
+  rename("gsis_id" = player_id)
+
+#penalties taken over 10 year span
+player_to_penaltiescount <- nfl_pbp |> 
+  group_by(gsis_id) |>
+  summarise(penalties_taken = n()) |>
+  arrange(gsis_id)
+
+#create estimated_penaltiespergame metric
+playersummary <- left_join(playersummary, player_to_penaltiescount, by = "gsis_id")
+playersummary <- playersummary |> 
+  mutate(estimated_penaltiespergame = round((penalties_taken/games_played),digits = 2))
 
 #join data on gsis_id - an established key specific to each NFL player 
 nfl_pbp <- left_join(nfl_pbp, players, by = "gsis_id")
 nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
+nfl_pbp <- left_join(nfl_pbp, playersummary, by = "gsis_id")
 
 #Add: 
 # player age at at gametime
@@ -72,7 +91,7 @@ ui <- fluidPage( theme = (shinytheme("cosmo")),
   titlePanel("Evan Gray - Project 2 - Analysis of NFL Penalties"),
   sidebarLayout(
     sidebarPanel(
-      h2("Select Subsetting Variables:"),  
+      h2("To see/update data hit Subset and Run!"),  
       
       radioButtons(
         "type",
@@ -123,8 +142,8 @@ ui <- fluidPage( theme = (shinytheme("cosmo")),
       h2("Create Your Own - Pick Axes:"),  
        selectizeInput("y_var",
                       "Select Numeric Variable (Calculation = Mean)",
-                      choices = list("Height", "weight", "years_experience"), 
-                      selected = "Height"
+                      choices = list("Height", "weight", "years_experience", "estimated_penaltiespergame"), 
+                      selected = "estimated_penaltiespergame"
                       ),
       selectizeInput("x_var",
                      "Select Categorical Variable",
@@ -155,7 +174,9 @@ ui <- fluidPage( theme = (shinytheme("cosmo")),
             "),
           p("
             Sidebar Subsetting - choose the specific data you want to populate the shiny report graphs, plots and tables with. Make 
-            your selections, then hit 'Subset and Run'!
+            your selections, then hit 'Subset and Run'! *Note - the NFL attributes certain penalties with 'no_play' instead of the play
+            type they occurred on - for example defensive pass interference is associated with 'no_play' NOT 'pass'. Also, the 'side of
+            ball- variable is specific to the side of the ball when the play started, so a illegal block could be associated with the              'defense' in the case of an interception return. 
             "),
           p("
             Data Download - this tab allows the user to download a dataset that the they can use to perform their own analyses. The 
@@ -164,7 +185,7 @@ ui <- fluidPage( theme = (shinytheme("cosmo")),
           p("
             Data Exporation - this section is split into two tabs: Subsettable Plots and Subsettable Tables. One shows pre-made faceted
             graphs of different kinds that interact with the chosen subsets. The other shows pre-made tables that show a more detailed 
-            numeric summary of the data. 
+            numeric summary of the data. NFL/Team colors were used in plotting fill. 
             "),
           p("
             Create Your Own Comparison - here you can make your own visualization (a bar chart) from a pre-selected list of numeric and

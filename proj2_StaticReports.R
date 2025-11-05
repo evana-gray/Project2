@@ -35,7 +35,7 @@ nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr,
                                      "STL" = "LA",
                                      "SD" = "LAC",
                                      "OAK" = "LV",
-                                     x)}
+                                     x)} #catchall
 )
 
  ##Check rename
@@ -45,11 +45,33 @@ nfl_pbp$team_abbr <- sapply(nfl_pbp$team_abbr,
  #load player and team specific information
 players <- load_players()
 teams <- load_teams()
-playerstats <- load_player_stats
+playerstats <- load_player_stats(seasons=c(seq(2009,2018,1))) #load player-game statistics overall for 10 year period
+
+
+#games played over 10 year span
+playersummary <- playerstats |> 
+  group_by(player_id) |>
+  summarise(games_played = n()) |>
+  arrange(player_id) |>
+  rename("gsis_id" = player_id)
+
+#penalties taken over 10 year span
+player_to_penaltiescount <- nfl_pbp |> 
+  group_by(gsis_id) |>
+  summarise(penalties_taken = n()) |>
+  arrange(gsis_id)
+
+#create estimated_penaltiespergame metric
+playersummary <- left_join(playersummary, player_to_penaltiescount, by = "gsis_id")
+playersummary <- playersummary |> 
+  mutate(estimated_penaltiespergame = round((penalties_taken/games_played),digits = 2))
+
 
 #join data on gsis_id - an established key specific to each NFL player 
+#bring in player and team specific data
 nfl_pbp <- left_join(nfl_pbp, players, by = "gsis_id")
 nfl_pbp <- left_join(nfl_pbp, teams, by = "team_abbr")
+nfl_pbp <- left_join(nfl_pbp, playersummary, by = "gsis_id")
 
 #Add: 
 # player age at at gametime
